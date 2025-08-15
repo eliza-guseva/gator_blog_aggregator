@@ -187,6 +187,25 @@ func HandlerListUserFollows(state *State, cmd Command, user *database.User) erro
 }
 
 
+func HandlerUnfollow(state *State, cmd Command, user *database.User) error {
+	feedURL := cmd.Arguments[0]
+	feed := state.GetFeedByURL(feedURL)
+
+	err := state.DB.UnfollowFeed(
+		context.Background(),
+		database.UnfollowFeedParams{
+			UserID: user.ID,
+			FeedID: feed.ID,
+		},
+	)
+	if err != nil { 
+		fmt.Printf("error unfollowing feed: %v", err)
+		os.Exit(1)
+	}
+	return nil
+}
+
+
 // helpers
 
 func MiddlewareLoggedIn(handler func(state *State, cmd Command, user *database.User) error) func(*State, Command) error {

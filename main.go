@@ -36,6 +36,7 @@ func main() {
 			"feeds": cmd.HandlerListFeeds,
 			"follow": cmd.MiddlewareLoggedIn(cmd.HandlerFollow),
 			"following": cmd.MiddlewareLoggedIn(cmd.HandlerListUserFollows),
+			"unfollow": cmd.MiddlewareLoggedIn(cmd.HandlerUnfollow),
 		},
 	}
 	args := make([]string,0)
