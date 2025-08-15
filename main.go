@@ -32,10 +32,10 @@ func main() {
 			"reset": cmd.HandlerReset,
 			"users": cmd.HandlerListUsers,
 			"agg": cmd.HandlerAgg,
-			"addfeed": cmd.HandlerAddFeed,
+			"addfeed": cmd.MiddlewareLoggedIn(cmd.HandlerAddFeed),
 			"feeds": cmd.HandlerListFeeds,
-			"follow": cmd.HandlerFollow,
-			"following": cmd.HandlerListUserFollows,
+			"follow": cmd.MiddlewareLoggedIn(cmd.HandlerFollow),
+			"following": cmd.MiddlewareLoggedIn(cmd.HandlerListUserFollows),
 		},
 	}
 	args := make([]string,0)

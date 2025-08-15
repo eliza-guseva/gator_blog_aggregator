@@ -121,21 +121,20 @@ func HandlerAgg(state *State, cmd Command) error {
 }
 
 
-func HandlerAddFeed(state *State, cmd Command) error {
+func HandlerAddFeed(state *State, cmd Command, user *database.User) error {
 	if len(cmd.Arguments) < 2 {
 		return fmt.Errorf("missing feed url oR name")
 		os.Exit(1)
 	}
 	feedName := cmd.Arguments[0]
 	feedURL := cmd.Arguments[1]
-	currentUser := state.GetCurrentUser()
 	
 	_, err := state.DB.CreateFeed(
 		context.Background(), 
 		database.CreateFeedParams{
 			Name: feedName,
 			Url: feedURL,
-			UserID: currentUser.ID,
+			UserID: user.ID,
 		},
 	)
 	if err != nil {
@@ -145,7 +144,7 @@ func HandlerAddFeed(state *State, cmd Command) error {
 	fmt.Printf("Feed created: %s\n", feedName)
 	
 	feed := state.GetFeedByURL(feedURL)
-	_ = state.CreateFeedFollow(currentUser.ID, feed.ID)
+	_ = state.CreateFeedFollow(user.ID, feed.ID)
 
 	return nil
 }	
@@ -163,20 +162,19 @@ func HandlerListFeeds(state *State, cmd Command) error {
 	return nil
 }
 
-func HandlerFollow(state *State, cmd Command) error {
-	currentUser := state.GetCurrentUser()
+func HandlerFollow(state *State, cmd Command, user *database.User) error {
 	
 	feed := state.GetFeedByURL(cmd.Arguments[0])
 	
-	follows := state.CreateFeedFollow(currentUser.ID, feed.ID)
+	follows := state.CreateFeedFollow(user.ID, feed.ID)
 	fmt.Println(follows)
 	return nil
 }
 
-func HandlerListUserFollows(state *State, cmd Command) error {
+func HandlerListUserFollows(state *State, cmd Command, user *database.User) error {
 	follows, err := state.DB.GetFeedFollowsForUser(
 		context.Background(),
-		state.GetCurrentUser().ID,
+		user.ID,
 	)
 	if err != nil { 
 		fmt.Printf("error listing user follows: %v", err)
@@ -190,6 +188,13 @@ func HandlerListUserFollows(state *State, cmd Command) error {
 
 
 // helpers
+
+func MiddlewareLoggedIn(handler func(state *State, cmd Command, user *database.User) error) func(*State, Command) error {
+	return func(state *State, cmd Command) error {
+		currentUser := state.GetCurrentUser()
+		return handler(state, cmd, currentUser)
+	}
+}
 
 
 func (state *State) GetCurrentUser() *database.User {
