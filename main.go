@@ -34,6 +34,8 @@ func main() {
 			"agg": cmd.HandlerAgg,
 			"addfeed": cmd.HandlerAddFeed,
 			"feeds": cmd.HandlerListFeeds,
+			"follow": cmd.HandlerFollow,
+			"following": cmd.HandlerListUserFollows,
 		},
 	}
 	args := make([]string,0)

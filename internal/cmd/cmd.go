@@ -8,6 +8,7 @@ import (
 	"gator/internal/config"
 	"gator/internal/database"
 	"gator/rss"
+	"github.com/google/uuid"
 )
 
 type State struct {
@@ -122,17 +123,14 @@ func HandlerAgg(state *State, cmd Command) error {
 
 func HandlerAddFeed(state *State, cmd Command) error {
 	if len(cmd.Arguments) < 2 {
-		return fmt.Errorf("missing feed url or name")
+		return fmt.Errorf("missing feed url oR name")
 		os.Exit(1)
 	}
 	feedName := cmd.Arguments[0]
 	feedURL := cmd.Arguments[1]
-	currentUser, err := state.GetCurrentUser()
-	if err != nil { 
-		fmt.Printf("error getting current user: %v", err)
-		os.Exit(1)
-	}
-	_, err = state.DB.CreateFeed(
+	currentUser := state.GetCurrentUser()
+	
+	_, err := state.DB.CreateFeed(
 		context.Background(), 
 		database.CreateFeedParams{
 			Name: feedName,
@@ -145,6 +143,10 @@ func HandlerAddFeed(state *State, cmd Command) error {
 		os.Exit(1)
 	}
 	fmt.Printf("Feed created: %s\n", feedName)
+	
+	feed := state.GetFeedByURL(feedURL)
+	_ = state.CreateFeedFollow(currentUser.ID, feed.ID)
+
 	return nil
 }	
 
@@ -161,12 +163,66 @@ func HandlerListFeeds(state *State, cmd Command) error {
 	return nil
 }
 
+func HandlerFollow(state *State, cmd Command) error {
+	currentUser := state.GetCurrentUser()
+	
+	feed := state.GetFeedByURL(cmd.Arguments[0])
+	
+	follows := state.CreateFeedFollow(currentUser.ID, feed.ID)
+	fmt.Println(follows)
+	return nil
+}
 
-func (state *State) GetCurrentUser() (*database.User, error) {
+func HandlerListUserFollows(state *State, cmd Command) error {
+	follows, err := state.DB.GetFeedFollowsForUser(
+		context.Background(),
+		state.GetCurrentUser().ID,
+	)
+	if err != nil { 
+		fmt.Printf("error listing user follows: %v", err)
+		os.Exit(1)
+	}
+	for _, follow := range follows {
+		fmt.Printf("* %s %s\n", follow.FeedName, follow.UserName)
+	}
+	return nil
+}
+
+
+// helpers
+
+
+func (state *State) GetCurrentUser() *database.User {
 	currentUser, err := state.DB.GetUser(
 		context.Background(), state.Config.CurrentUser)
 	if err != nil {
-		return nil, fmt.Errorf("error getting current user: %v", err)
+		fmt.Printf("error getting current user: %v", err)
+		os.Exit(1)
 	}	
-	return &currentUser, nil
+	return &currentUser
 }
+
+func (state *State) GetFeedByURL(url string) *database.Feed {
+	feed, err := state.DB.GetFeed(context.Background(), url)
+	if err != nil { 
+		fmt.Printf("error getting feed: %v", err)
+		os.Exit(1)
+	}
+	return &feed
+}
+
+func (state *State) CreateFeedFollow(userID uuid.UUID, feedID uuid.UUID) *database.CreateFeedFollowRow {
+	follows, err := state.DB.CreateFeedFollow(
+		context.Background(), 
+		database.CreateFeedFollowParams{
+			UserID: userID,
+			FeedID: feedID,
+		},
+	)
+	if err != nil {
+		fmt.Printf("error creating feed follow: %v", err)
+		os.Exit(1)
+	}
+	return &follows
+}
+
