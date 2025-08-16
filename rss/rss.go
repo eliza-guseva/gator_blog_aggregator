@@ -50,7 +50,8 @@ func FetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	if err != nil {
     	return nil, fmt.Errorf("error parsing XML: %v", err)
 	}
-	fmt.Println(feed)
 
 	return &feed, nil
 }
+
+

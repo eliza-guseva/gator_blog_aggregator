@@ -11,6 +11,9 @@ import (
 	"gator/internal/cmd"
 )
 
+
+
+
 func main() {
 	myConfig, err := config.Read()
 	if err != nil { panic(err) }
@@ -37,6 +40,7 @@ func main() {
 			"follow": cmd.MiddlewareLoggedIn(cmd.HandlerFollow),
 			"following": cmd.MiddlewareLoggedIn(cmd.HandlerListUserFollows),
 			"unfollow": cmd.MiddlewareLoggedIn(cmd.HandlerUnfollow),
+			"browse": cmd.MiddlewareLoggedIn(cmd.HandlerBrowse),
 		},
 	}
 	args := make([]string,0)
